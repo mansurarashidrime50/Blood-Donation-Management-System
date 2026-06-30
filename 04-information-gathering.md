@@ -1,51 +1,75 @@
 # Information Gathering
 
+---
+
 ## Methods Used
 
 ### 1. Interviews
-- **Number Conducted**: 10
-- **Participants**: Hospital staff, donors, administrators
-- **Key Findings**:
-  - 80% struggle with manual inventory tracking
-  - 70% want mobile accessibility
-  - 90% prefer automated notifications
+- Talked to 10 people
+- Found: 80% need better inventory system
+- Found: 90% want SMS alerts
+- Found: 70% want mobile access
 
 ### 2. Surveys
-- **Number Responses**: 150
-- **Response Rate**: 75%
-- **Key Findings**:
-  - 85% would donate more if easier process
-  - 60% don't know current blood levels
-  - 75% want appointment reminders
+- 150 people responded
+- Found: 85% would donate more if easier
+- Found: 60% don't know blood levels
+- Found: 75% want reminders
 
 ### 3. Document Analysis
-- **Sources**: Hospital records, blood donation guidelines
-- **Key Findings**:
-  - Current systems are outdated
-  - Compliance requirements are complex
-  - Data privacy is critical
+- Current systems are outdated
+- Rules are complex
+- Data privacy is important
 
 ### 4. Observation
-- **Method**: Visit to blood banks
-- **Key Findings**:
-  - Manual processes cause delays
-  - Staff overwhelmed during emergencies
-  - Donor waiting times too long
+- Manual processes cause delays
+- Staff are overwhelmed
+- Donors wait too long
 
-## Synthesized Requirements
+---
+
+## What Users Want
+
+| What | Why |
+|------|-----|
+| SMS alerts | Know when to donate |
+| Easy registration | Donate quickly |
+| Bengali language | Understand everything |
+| No internet | Everyone can use it |
+| Free service | Poor people can afford |
+
+---
+
+## Requirements
 
 ### Must Have
-- Donor registration system
-- Blood inventory tracking
+- Donor registration
+- Blood tracking
 - Request management
-- Notification system
+- SMS alerts
 
 ### Should Have
-- Reporting dashboard
-- Appointment scheduling
-- Donor history tracking
+- Dashboard
+- Scheduling
+- Donor history
 
 ### Could Have
-- Mobile application
-- Analytics dashboard
-- Donor rewards program
+- Mobile app
+- Analytics
+- Rewards
+
+---
+
+## Summary
+
+| Problem | Solution |
+|---------|----------|
+| Manual tracking | Digital system |
+| No alerts | SMS notifications |
+| Hard to donate | Simple process |
+| No Bengali | Bengali support |
+| Long waiting | Quick response |
+
+---
+
+**Date:** 30 June 2026
