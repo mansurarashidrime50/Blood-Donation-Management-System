@@ -1,53 +1,53 @@
 # Stakeholder Analysis
 
-## Primary Stakeholders
+## Who Are We Helping?
 
-### 1. Blood Donors
-- **Type**: External
-- **Influence**: High
-- **Interest**: Medium
-- **Needs**: Easy registration, appointment scheduling, health tips
-- **Concerns**: Privacy, health safety, convenience
-- **Engagement Strategy**: Regular communication, rewards program
+### 1. Poor Patients
+- Need free blood
+- Need Bengali language
+- No internet needed
 
-### 2. Hospital Staff
-- **Type**: Internal
-- **Influence**: High
-- **Interest**: High
-- **Needs**: Quick inventory access, request management
-- **Concerns**: System reliability, user-friendliness
-- **Engagement Strategy**: Training, ongoing support
+### 2. Blood Donors
+- Need SMS alerts
+- Want to know when to donate
 
-### 3. Recipients
-- **Type**: External
-- **Influence**: Low
-- **Interest**: High
-- **Needs**: Quick access to matching blood
-- **Concerns**: Waiting time, blood safety
-- **Engagement Strategy**: Quick response system
+### 3. Hospitals
+- Need to find donors quickly
+- Need blood inventory
 
-### 4. System Administrators
-- **Type**: Internal
-- **Influence**: High
-- **Interest**: High
-- **Needs**: System management, user oversight
-- **Concerns**: Security, data integrity
-- **Engagement Strategy**: Admin training
+### 4. Blood Banks
+- Need to track stock
+- Need to reduce waste
 
-## Stakeholder Matrix
+### 5. NGOs
+- Want to help poor people
+- Want social impact
 
-| Stakeholder | Influence | Interest | Priority |
-|-------------|-----------|----------|----------|
-| Hospital Staff | High | High | 1 |
-| System Admins | High | High | 2 |
-| Donors | High | Medium | 3 |
-| Recipients | Low | High | 4 |
+---
 
-## Communication Plan
+## What Each Stakeholder Gets
 
-| Stakeholder | Method | Frequency |
-|-------------|--------|-----------|
-| Hospital Staff | Meeting | Weekly |
-| Donors | Email/SMS | Monthly |
-| Recipients | Email | As needed |
-| System Admins | Dashboard | Daily |
+| Who | What They Get |
+|-----|---------------|
+| Poor Patients | Free blood, Bengali |
+| Donors | SMS alerts, save lives |
+| Hospitals | Quick donor access |
+| Blood Banks | Better inventory |
+| NGOs | Social impact |
+
+---
+
+## How We Communicate
+
+| Who | How | When |
+|-----|-----|------|
+| Patients | SMS | As needed |
+| Donors | SMS | Weekly |
+| Hospitals | Dashboard | Daily |
+| Blood Banks | Dashboard | Daily |
+| NGOs | Meetings | Monthly |
+
+---
+
+**Simple. Free. Saves Lives.**
+
