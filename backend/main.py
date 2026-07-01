@@ -12,5 +12,5 @@ app.add_middleware(
 )
 
 @app.get("/")
-def test_endpoint():
-    return {"message": "Blood Donation Backend Running"}
+def home():
+    return {"message": "BloodConnect API is running!"}
