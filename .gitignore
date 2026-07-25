@@ -1,0 +1,31 @@
+# Python virtual environments
+**/venv/
+**/.venv/
+**/env/
+
+# Node modules
+**/node_modules/
+
+# Python cache / logs
+**/__pycache__/
+**/.pytest_cache/
+*.pyc
+
+# Environment files
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+
+# Databases
+*.db
+*.sqlite3
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Build/Dist
+**/dist/
+**/build/
