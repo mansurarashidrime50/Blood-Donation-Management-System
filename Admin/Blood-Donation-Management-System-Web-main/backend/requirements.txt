@@ -1,0 +1,22 @@
+# fastapi
+# uvicorn
+# sqlalchemy
+# pydantic
+# python-jose
+# passlib[bcrypt]
+# python-multipart
+# email-validator
+
+
+fastapi
+uvicorn
+gunicorn
+sqlalchemy
+passlib[bcrypt]
+bcrypt==4.0.1
+python-jose
+python-multipart
+email-validator
+pydantic
+psycopg2-binary
+python-dotenv
