@@ -167,6 +167,25 @@
   transform: translateY(-1px);
 }
 
+/* Messages */
+.dashboard-error {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: rgba(225, 29, 72, 0.15);
+  color: #fecdd3;
+  border-radius: 12px;
+  border: 1px solid rgba(225, 29, 72, 0.4);
+}
+
+.dashboard-success {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: rgba(34, 197, 94, 0.15);
+  color: #bbf7d0;
+  border-radius: 12px;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
 /* Tabs */
 .admin-tabs {
   display: flex;
@@ -242,16 +261,7 @@
   filter: drop-shadow(0 0 8px rgba(225, 29, 72, 0.5));
 }
 
-.dashboard-error {
-  margin-bottom: 20px;
-  padding: 14px 18px;
-  background: rgba(225, 29, 72, 0.15);
-  color: #fecdd3;
-  border-radius: 12px;
-  border: 1px solid rgba(225, 29, 72, 0.4);
-}
-
-/* Users Table Section */
+/* Users & Requests Table Section */
 .users-section {
   background: var(--card-bg);
   backdrop-filter: blur(16px);
@@ -298,34 +308,6 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
-.role-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.role-admin {
-  background: rgba(225, 29, 72, 0.2);
-  color: #fecdd3;
-  border: 1px solid rgba(225, 29, 72, 0.4);
-}
-
-.role-donor {
-  background: rgba(34, 197, 94, 0.15);
-  color: #86efac;
-  border: 1px solid rgba(34, 197, 94, 0.3);
-}
-
-.role-patient {
-  background: rgba(59, 130, 246, 0.15);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-}
-
 .blood-badge {
   display: inline-block;
   padding: 4px 10px;
@@ -334,6 +316,45 @@
   font-weight: 700;
   border-radius: 8px;
   border: 1px solid rgba(225, 29, 72, 0.3);
+}
+
+.role-select,
+.status-select {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #ffffff;
+  border: 1px solid var(--card-border);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.role-select option,
+.status-select option {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.action-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-btn {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.4);
+  color: #ffffff;
 }
 
 @media (max-width: 768px) {
