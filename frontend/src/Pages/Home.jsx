@@ -23,7 +23,7 @@ function Home() {
           </div>
 
           <h1 className="hero-title">
-            Welcome to Blood donation management system
+            Welcome to Blood Donation Management System
           </h1>
 
           <p className="hero-description">
