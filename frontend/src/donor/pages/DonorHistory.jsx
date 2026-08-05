@@ -21,7 +21,7 @@ export default function DonorHistory() {
     setError(null);
     try {
       const skip = (currentPage - 1) * itemsPerPage;
-      const response = await donorService.getDonationHistory({ skip, limit: itemsPerPage });
+      const response = await donorService.getHistory({ skip, limit: itemsPerPage });
       setDonations(response.data.items);
       setTotal(response.data.total);
     } catch (err) {
@@ -39,7 +39,7 @@ export default function DonorHistory() {
   const handleCancelOffer = async (id) => {
     if (!window.confirm("Are you sure you want to cancel this donation offer?")) return;
     try {
-      await donorService.cancelDonationOffer(id);
+      await donorService.cancelDonation(id);
       setToast({ type: 'success', message: "Successfully cancelled your donation offer." });
       
       // Update local state without full reload
