@@ -41,15 +41,13 @@ class BloodRequestBase(BaseModel):
             raise ValueError("Contact number must be a valid Bangladesh phone number (e.g., +8801712345678 or 01712345678).")
         return v
 
+class BloodRequestCreate(BloodRequestBase):
     @field_validator("required_date")
     @classmethod
     def validate_required_date(cls, v: date) -> date:
         if v < date.today():
             raise ValueError("Required date cannot be in the past.")
         return v
-
-class BloodRequestCreate(BloodRequestBase):
-    pass
 
 class BloodRequestUpdate(BaseModel):
     patient_name: Optional[str] = Field(None, min_length=2, max_length=100)
@@ -63,6 +61,10 @@ class BloodRequestUpdate(BaseModel):
     contact_number: Optional[str] = None
     additional_notes: Optional[str] = Field(None, max_length=500)
     request_status: Optional[str] = None
+    accepted_donor_id: Optional[int] = None
+    accepted_at: Optional[datetime] = None
+    approved_by_id: Optional[int] = None
+    approved_at: Optional[datetime] = None
 
     @field_validator("emergency_level")
     @classmethod

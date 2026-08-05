@@ -258,11 +258,13 @@ export default function Register() {
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Division</label>
                   <select
                     className="w-full text-sm rounded-xl border border-slate-200 bg-white py-2.5 px-4 outline-none focus:border-red-500"
-                    {...register('division', { required: 'Division is required' })}
-                    onChange={(e) => {
-                      setSelectedDivision(e.target.value);
-                      setValue('district', '');
-                    }}
+                    {...register('division', { 
+                      required: 'Division is required',
+                      onChange: (e) => {
+                        setSelectedDivision(e.target.value);
+                        setValue('district', '');
+                      }
+                    })}
                   >
                     <option value="">Select Division</option>
                     {Object.keys(DIVISION_DISTRICTS).map((div) => (
