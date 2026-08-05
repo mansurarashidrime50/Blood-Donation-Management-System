@@ -59,7 +59,7 @@ export default function BloodRequestList() {
 
   return (
     <div className="flex-1 py-10 px-4 sm:px-6 lg:px-8 bg-slate-50 min-h-screen">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Toast Alert Banner */}
         {deleteSuccess && (

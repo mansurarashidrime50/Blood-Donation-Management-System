@@ -4,6 +4,7 @@ import client from '../../shared/api/client';
 import ProfileCard from '../../shared/components/ProfileCard';
 import Pagination from '../../shared/components/Pagination';
 import Loader from '../../shared/components/Loader';
+import { useAuth } from '../../shared/context/AuthContext';
 
 const DIVISION_DISTRICTS = {
   'Dhaka': ['Dhaka', 'Gazipur', 'Narayanganj', 'Tangail', 'Faridpur'],
@@ -29,6 +30,17 @@ export default function SearchDonors() {
   const [availability, setAvailability] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  const { user } = useAuth();
+  const [requests, setRequests] = useState([]);
+
+  useEffect(() => {
+    if (user && user.role === 'PATIENT') {
+      client.get('/patient/requests').then(res => {
+        setRequests(res.data.items || []);
+      }).catch(err => console.error("Failed to load requests", err));
+    }
+  }, [user]);
 
   const fetchDonors = useCallback(async () => {
     setLoading(true);
@@ -161,9 +173,12 @@ export default function SearchDonors() {
           </div>
         ) : (
           <div className="space-y-4">
-            {donors.map((donor) => (
-              <ProfileCard key={donor.id} user={donor} />
-            ))}
+            {donors.map((donor) => {
+              const isMatchActive = requests.some(r => r.accepted_donor_id === donor.id && ['Accepted', 'Confirmed', 'Donation Completed', 'Waiting Verification'].includes(r.request_status));
+              return (
+                <ProfileCard key={donor.id} user={donor} isMatchActive={isMatchActive} />
+              );
+            })}
           </div>
         )}
       </div>

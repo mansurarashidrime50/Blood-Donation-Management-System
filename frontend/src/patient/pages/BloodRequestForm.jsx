@@ -86,7 +86,8 @@ export default function BloodRequestForm() {
 
   const validateRequiredDate = (value) => {
     if (!value) return true;
-    const selectedDate = new Date(value);
+    const [year, month, day] = value.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, day);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return selectedDate >= today || 'Required date cannot be in the past';
@@ -107,7 +108,7 @@ export default function BloodRequestForm() {
         await patientService.createRequest(payload);
         setToast({ type: 'success', message: "Blood request created successfully!" });
       }
-      setTimeout(() => navigate('/patient/dashboard'), 1500);
+      setTimeout(() => navigate('/patient/requests'), 1500);
     } catch (err) {
       console.error(err);
       setToast({ type: 'error', message: err.response?.data?.detail || "Failed to submit blood request details." });
@@ -240,8 +241,10 @@ export default function BloodRequestForm() {
             <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Division</label>
             <select
               className="w-full text-sm rounded-xl border border-slate-200 bg-white py-2.5 px-4 outline-none focus:border-red-500"
-              {...register('division', { required: 'Division is required' })}
-              onChange={handleDivisionChange}
+              {...register('division', { 
+                required: 'Division is required',
+                onChange: handleDivisionChange
+              })}
             >
               <option value="">Select Division</option>
               {Object.keys(DIVISION_DISTRICTS).map((div) => (

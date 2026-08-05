@@ -9,6 +9,8 @@ import Button from '../../shared/components/Button';
 import Toast from '../../shared/components/Toast';
 import Loader from '../../shared/components/Loader';
 import { useAuth } from '../../shared/context/AuthContext';
+import sharedService from '../../shared/services/sharedService';
+import ChatModal from '../../shared/components/ChatModal';
 
 export default function PatientDashboard() {
   const { user } = useAuth();
@@ -28,6 +30,12 @@ export default function PatientDashboard() {
   const [donorsError, setDonorsError] = useState(null);
 
   const [toast, setToast] = useState(null);
+
+  // Chat overlay state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatRequestId, setChatRequestId] = useState(null);
+  const [chatOpponentId, setChatOpponentId] = useState(null);
+  const [chatOpponentName, setChatOpponentName] = useState(null);
 
   const fetchRequests = useCallback(async () => {
     setLoadingRequests(true);
@@ -102,6 +110,24 @@ export default function PatientDashboard() {
   };
 
   const stats = getStatsCounts();
+
+  const getActiveMatch = (donorId) => {
+    return requests.find(r => r.accepted_donor_id === donorId && ['Accepted', 'Confirmed', 'Donation Completed', 'Waiting Verification'].includes(r.request_status));
+  };
+
+  const handleCallDonorLog = async (donorId, requestId) => {
+    try {
+      await sharedService.logCall({
+        caller_id: user.id,
+        receiver_id: donorId,
+        request_id: requestId || 0,
+        call_type: "CALL_DONOR",
+        status: "Completed"
+      });
+    } catch (err) {
+      console.error("Failed to log call", err);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-slide-up text-left">
@@ -187,6 +213,36 @@ export default function PatientDashboard() {
                   <td className="px-6 py-4">
                     <div className="font-bold text-slate-850">{req.patient_name}</div>
                     <div className="text-xs text-slate-400 font-semibold mt-0.5">Hospital: {req.hospital_name}</div>
+                    {req.accepted_donor && (
+                      <div className="mt-2 p-2 bg-rose-50/50 border border-rose-100 rounded-xl space-y-1.5 max-w-xs">
+                        <div className="text-[9px] font-extrabold text-rose-700 uppercase tracking-wider">Accepted Match Donor</div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-700">{req.accepted_donor.full_name} ({req.accepted_donor.blood_group})</span>
+                          <div className="flex gap-1.5">
+                            <a
+                              href={`tel:${req.accepted_donor.phone}`}
+                              onClick={() => handleCallDonorLog(req.accepted_donor.id, req.id)}
+                              className="p-1 bg-white hover:bg-slate-100 border border-slate-200 rounded text-slate-650"
+                              title="Call Donor"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              onClick={() => {
+                                setChatRequestId(req.id);
+                                setChatOpponentId(req.accepted_donor.id);
+                                setChatOpponentName(req.accepted_donor.full_name);
+                                setIsChatOpen(true);
+                              }}
+                              className="p-1 bg-slate-900 hover:bg-slate-800 text-white rounded text-[10px] font-bold"
+                              title="Chat live"
+                            >
+                              Chat
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-extrabold text-red-600">{req.blood_group_required}</div>
@@ -270,37 +326,88 @@ export default function PatientDashboard() {
                 No active donors currently marked available.
               </div>
             ) : (
-              donors.map((donor) => (
-                <div key={donor.id} className="p-3 bg-slate-50/50 hover:bg-slate-50 rounded-xl border border-slate-100/80 transition-colors space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-slate-800 truncate max-w-[130px]">{donor.full_name}</span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-wider rounded border border-emerald-100">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      Available
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-7 h-7 rounded-lg bg-red-650 flex items-center justify-center text-xs font-black text-white">
-                        {donor.blood_group}
+              donors.map((donor) => {
+                const activeMatch = getActiveMatch(donor.id);
+                return (
+                  <div key={donor.id} className="p-4 bg-slate-50/50 hover:bg-slate-50 rounded-2xl border border-slate-100/85 transition-all space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-slate-800 truncate max-w-[130px]">{donor.full_name}</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[9px] font-black uppercase tracking-wider rounded border border-emerald-100">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Available
                       </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 border-y border-slate-100 py-2 my-1 text-[10px] font-semibold text-slate-500">
                       <div>
-                        <div className="text-[10px] text-slate-400 font-bold uppercase">Location</div>
-                        <div className="text-xs font-bold text-slate-700">{donor.division}, {donor.district}</div>
+                        <div className="text-slate-400 font-bold uppercase text-[8px]">Total Donations</div>
+                        <div className="font-extrabold text-slate-700 text-xs mt-0.5">{donor.donor_profile?.total_donations ?? 0} times</div>
+                      </div>
+                      <div>
+                        <div className="text-slate-400 font-bold uppercase text-[8px]">Last Donation</div>
+                        <div className="font-extrabold text-slate-700 text-xs mt-0.5">{donor.donor_profile?.last_donation_date ?? 'Never'}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-xl bg-red-600 flex items-center justify-center text-xs font-black text-white shadow-sm shadow-red-200">
+                          {donor.blood_group}
+                        </span>
+                        <div>
+                          <div className="text-[9px] text-slate-400 font-bold uppercase">Estimated Proximity</div>
+                          <div className="text-xs font-bold text-slate-700">
+                            {donor.district} ({donor.estimated_distance ? `${donor.estimated_distance} km` : 'N/A'})
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
-                    <a 
-                      href={`tel:${donor.phone}`} 
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-650 transition-colors shadow-sm"
-                    >
-                      <Phone className="w-3 h-3 text-red-500" />
-                      Call Donor
-                    </a>
+                    {activeMatch ? (
+                      <div className="flex gap-2 w-full pt-1">
+                        <a
+                          href={`tel:${donor.phone}`}
+                          onClick={() => handleCallDonorLog(donor.id, activeMatch.id)}
+                          className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 bg-red-50 hover:bg-red-100 border border-red-100 rounded-lg text-[10px] font-bold text-red-655"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-red-500" /> Call Donor
+                        </a>
+                        <button
+                          onClick={() => {
+                            setChatRequestId(activeMatch.id);
+                            setChatOpponentId(donor.id);
+                            setChatOpponentName(donor.full_name);
+                            setIsChatOpen(true);
+                          }}
+                          className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 bg-slate-900 hover:bg-slate-800 rounded-lg text-[10px] font-bold text-white"
+                        >
+                          Chat Live
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1.5 w-full pt-1.5 border-t border-slate-100/50">
+                        <span className="text-[9px] text-slate-400 font-bold italic flex items-center gap-1 justify-center">
+                          🔒 Communication locked until match acceptance
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            disabled
+                            className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-400 cursor-not-allowed"
+                          >
+                            <Phone className="w-3 h-3" /> Call Locked
+                          </button>
+                          <button
+                            disabled
+                            className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-400 cursor-not-allowed"
+                          >
+                            Chat Locked
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
@@ -316,6 +423,17 @@ export default function PatientDashboard() {
         </div>
 
       </div>
+
+      {/* Chat modal overlay */}
+      {isChatOpen && chatRequestId && (
+        <ChatModal
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          requestId={chatRequestId}
+          opponentId={chatOpponentId}
+          opponentName={chatOpponentName}
+        />
+      )}
     </div>
   );
 }
