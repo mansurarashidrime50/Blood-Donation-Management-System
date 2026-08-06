@@ -8,6 +8,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app.database.session import engine, Base, SessionLocal
 from app.models.user import User
+from app.models.profile import AdminProfile, DonorProfile, PatientProfile
 from app.models.blood_request import BloodRequest
 from app.models.donation import Donation
 from app.core.security import get_password_hash
@@ -35,20 +36,23 @@ async def seed_data():
         print("Seeding Administrator account...")
         admin = User(
             full_name="System Administrator",
-            email="admin@example.com",
+            email="admin@gmail.com",
             password_hash=get_password_hash("AdminPass123!"),
             phone="01711122233",
             role="ADMIN",
             status="ACTIVE"
         )
         db.add(admin)
+        await db.flush()
+        admin_prof = AdminProfile(user_id=admin.id)
+        db.add(admin_prof)
 
         print("Seeding Donors...")
         donors_data = [
             {
                 "full_name": "Rashed Khan",
-                "email": "donor1@example.com",
-                "password_hash": get_password_hash("DonorPass123!"),
+                "email": "donor1@gmail.com",
+                "password_hash": get_password_hash("Aa!123456789"),
                 "phone": "01722233344",
                 "role": "DONOR",
                 "status": "ACTIVE",
@@ -61,12 +65,14 @@ async def seed_data():
                 "address": "House 12, Road 4",
                 "weight": 72.5,
                 "availability": True,
-                "medical_conditions": "None"
+                "medical_conditions": "None",
+                "latitude": 23.8041,
+                "longitude": 90.3626
             },
             {
                 "full_name": "Nafisa Kamal",
-                "email": "donor2@example.com",
-                "password_hash": get_password_hash("DonorPass123!"),
+                "email": "donor2@gmail.com",
+                "password_hash": get_password_hash("Aa!123456789"),
                 "phone": "01833344455",
                 "role": "DONOR",
                 "status": "ACTIVE",
@@ -79,12 +85,14 @@ async def seed_data():
                 "address": "Apartment 3B, Road 15A",
                 "weight": 54.0,
                 "availability": True,
-                "medical_conditions": "None"
+                "medical_conditions": "None",
+                "latitude": 23.7461,
+                "longitude": 90.3742
             },
             {
                 "full_name": "Arif Chowdhury",
-                "email": "donor3@example.com",
-                "password_hash": get_password_hash("DonorPass123!"),
+                "email": "donor3@gmail.com",
+                "password_hash": get_password_hash("Aa!123456789"),
                 "phone": "01944455566",
                 "role": "DONOR",
                 "status": "ACTIVE",
@@ -98,7 +106,9 @@ async def seed_data():
                 "weight": 81.0,
                 "availability": False,
                 "last_donation_date": date.today() - timedelta(days=95),
-                "medical_conditions": "High BP (Controlled)"
+                "medical_conditions": "High BP (Controlled)",
+                "latitude": 22.3275,
+                "longitude": 91.7856
             }
         ]
         
@@ -112,8 +122,8 @@ async def seed_data():
         patients_data = [
             {
                 "full_name": "Rahim Ahmed",
-                "email": "patient1@example.com",
-                "password_hash": get_password_hash("PatientPass123!"),
+                "email": "patient1@gmail.com",
+                "password_hash": get_password_hash("Aa!123456789"),
                 "phone": "01555566677",
                 "role": "PATIENT",
                 "status": "ACTIVE",
@@ -121,12 +131,14 @@ async def seed_data():
                 "division": "Dhaka",
                 "district": "Dhaka",
                 "area": "Uttara",
-                "address": "Sector 4, Road 2"
+                "address": "Sector 4, Road 2",
+                "latitude": 23.8759,
+                "longitude": 90.3795
             },
             {
                 "full_name": "Tasnim Jahan",
-                "email": "patient2@example.com",
-                "password_hash": get_password_hash("PatientPass123!"),
+                "email": "patient2@gmail.com",
+                "password_hash": get_password_hash("Aa!123456789c"),
                 "phone": "01666677788",
                 "role": "PATIENT",
                 "status": "ACTIVE",
@@ -134,7 +146,9 @@ async def seed_data():
                 "division": "Dhaka",
                 "district": "Dhaka",
                 "area": "Banani",
-                "address": "Block F, Road 11"
+                "address": "Block F, Road 11",
+                "latitude": 23.7937,
+                "longitude": 90.4066
             }
         ]
         
@@ -145,6 +159,27 @@ async def seed_data():
             patients.append(patient)
 
         # Flush to get IDs
+        await db.flush()
+
+        # Create profiles
+        for donor in donors:
+            next_el = None
+            if donor.last_donation_date:
+                next_el = donor.last_donation_date + timedelta(days=90)
+            donor_prof = DonorProfile(
+                user_id=donor.id,
+                last_donation_date=donor.last_donation_date,
+                next_eligible_date=next_el,
+                total_donations=1 if donor.last_donation_date else 0,
+                is_verified=True,
+                availability=donor.availability
+            )
+            db.add(donor_prof)
+
+        for patient in patients:
+            patient_prof = PatientProfile(user_id=patient.id)
+            db.add(patient_prof)
+
         await db.flush()
 
         print("Seeding Blood Requests...")
@@ -161,7 +196,9 @@ async def seed_data():
                 "required_date": date.today() + timedelta(days=2),
                 "contact_number": "01555566677",
                 "additional_notes": "Surgical operation. Need fresh blood if possible.",
-                "request_status": "Pending"
+                "request_status": "Pending",
+                "latitude": 23.8123,
+                "longitude": 90.4312
             },
             {
                 "patient_id": patients[1].id,
@@ -175,7 +212,9 @@ async def seed_data():
                 "required_date": date.today() + timedelta(days=1),
                 "contact_number": "01666677788",
                 "additional_notes": "Emergency ICU admission.",
-                "request_status": "Approved"
+                "request_status": "Approved",
+                "latitude": 23.7261,
+                "longitude": 90.3976
             }
         ]
 
@@ -211,11 +250,11 @@ async def seed_data():
         print("Database seeding completed successfully!")
         print("\nDefault Accounts Created:")
         print("--------------------------")
-        print("Admin   : admin@example.com / AdminPass123!")
-        print("Donor 1 : donor1@example.com / DonorPass123! (A+)")
-        print("Donor 2 : donor2@example.com / DonorPass123! (O-)")
-        print("Patient 1: patient1@example.com / PatientPass123! (A+)")
-        print("Patient 2: patient2@example.com / PatientPass123! (O-)")
+        print("Admin   : admin@gmail.com / AdminPass123!")
+        print("Donor 1 : donor1@gmail.com / Aa!123456789 (A+)")
+        print("Donor 2 : donor2@gmail.com / Aa!123456789 (O-)")
+        print("Patient 1: patient1@gmail.com / Aa!123456789 (A+)")
+        print("Patient 2: patient2@gmail.com / Aa!123456789c (O-)")
 
 if __name__ == "__main__":
     asyncio.run(seed_data())

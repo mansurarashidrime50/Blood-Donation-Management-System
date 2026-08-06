@@ -2,16 +2,23 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from typing import List, Optional, Tuple
-from datetime import date
-from app.models.donation import Donation
+from datetime import date, datetime
+from app.models.donation import Donation, DonationHistory
 from app.schemas.donation import DonationCreate, DonationUpdate
+from app.models.user import User
+from app.models.blood_request import BloodRequest
+
 
 class DonationRepository:
     async def get(self, db: AsyncSession, id: int) -> Optional[Donation]:
         result = await db.execute(
             select(Donation)
             .filter(Donation.id == id)
-            .options(selectinload(Donation.request), selectinload(Donation.donor))
+            .options(
+                selectinload(Donation.request).selectinload(BloodRequest.histories),
+                selectinload(Donation.donor).selectinload(User.donor_profile),
+                selectinload(Donation.histories).selectinload(DonationHistory.changed_by)
+            )
         )
         return result.scalars().first()
 
@@ -19,7 +26,11 @@ class DonationRepository:
         result = await db.execute(
             select(Donation)
             .filter(Donation.uuid == uuid)
-            .options(selectinload(Donation.request), selectinload(Donation.donor))
+            .options(
+                selectinload(Donation.request).selectinload(BloodRequest.histories),
+                selectinload(Donation.donor).selectinload(User.donor_profile),
+                selectinload(Donation.histories).selectinload(DonationHistory.changed_by)
+            )
         )
         return result.scalars().first()
 
@@ -28,24 +39,49 @@ class DonationRepository:
             donor_id=donor_id,
             request_id=obj_in.request_id,
             donation_date=obj_in.donation_date,
-            status=obj_in.status
+            status=obj_in.status,
+            donation_time=obj_in.donation_time,
+            donation_location=obj_in.donation_location,
+            eta=obj_in.eta,
+            donor_completed=obj_in.donor_completed,
+            patient_completed=obj_in.patient_completed
         )
         db.add(db_obj)
-        await db.commit()
-        await db.refresh(db_obj)
-        # Refresh relationships
-        result = await db.execute(
-            select(Donation)
-            .filter(Donation.id == db_obj.id)
-            .options(selectinload(Donation.request), selectinload(Donation.donor))
-        )
-        return result.scalars().first()
+        await db.flush()
 
-    async def update(self, db: AsyncSession, *, db_obj: Donation, obj_in: DonationUpdate) -> Donation:
+        # Log history
+        history = DonationHistory(
+            donation_id=db_obj.id,
+            status=db_obj.status,
+            changed_by_id=donor_id,
+            notes="Donation offer created by donor"
+        )
+        db.add(history)
+        await db.commit()
+
+        # Refresh and load relationships
+        return await self.get(db, db_obj.id)
+
+    async def update(
+        self, db: AsyncSession, *, db_obj: Donation, obj_in: DonationUpdate, changed_by_id: Optional[int] = None, notes: Optional[str] = None
+    ) -> Donation:
+        old_status = db_obj.status
         update_data = obj_in.model_dump(exclude_unset=True)
         for field in update_data:
             setattr(db_obj, field, update_data[field])
         db.add(db_obj)
+        await db.flush()
+
+        # Log history if status changes
+        if old_status != db_obj.status:
+            history = DonationHistory(
+                donation_id=db_obj.id,
+                status=db_obj.status,
+                changed_by_id=changed_by_id,
+                notes=notes or f"Status changed from {old_status} to {db_obj.status}"
+            )
+            db.add(history)
+
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
@@ -59,7 +95,11 @@ class DonationRepository:
 
         query = (
             select(Donation)
-            .options(selectinload(Donation.request), selectinload(Donation.donor))
+            .options(
+                selectinload(Donation.request).selectinload(BloodRequest.histories),
+                selectinload(Donation.donor).selectinload(User.donor_profile),
+                selectinload(Donation.histories).selectinload(DonationHistory.changed_by)
+            )
             .offset(skip)
             .limit(limit)
             .order_by(Donation.id.desc())
@@ -78,7 +118,11 @@ class DonationRepository:
         query = (
             select(Donation)
             .filter(Donation.donor_id == donor_id)
-            .options(selectinload(Donation.request), selectinload(Donation.donor))
+            .options(
+                selectinload(Donation.request).selectinload(BloodRequest.histories),
+                selectinload(Donation.donor).selectinload(User.donor_profile),
+                selectinload(Donation.histories).selectinload(DonationHistory.changed_by)
+            )
             .offset(skip)
             .limit(limit)
             .order_by(Donation.id.desc())
@@ -93,7 +137,10 @@ class DonationRepository:
         query = (
             select(Donation)
             .filter(Donation.request_id == request_id)
-            .options(selectinload(Donation.donor))
+            .options(
+                selectinload(Donation.donor).selectinload(User.donor_profile),
+                selectinload(Donation.histories).selectinload(DonationHistory.changed_by)
+            )
             .order_by(Donation.id.desc())
         )
         result = await db.execute(query)
@@ -108,3 +155,4 @@ class DonationRepository:
         return result.scalars().first()
 
 donation_repository = DonationRepository()
+

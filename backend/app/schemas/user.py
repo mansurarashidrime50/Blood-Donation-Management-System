@@ -47,6 +47,8 @@ class DonorRegister(UserBase):
     medical_conditions: Optional[str] = None
     terms_accepted: bool = True
     availability: bool = True
+    smoking_status: Optional[str] = None
+    alcohol_consumption: Optional[str] = None
 
     @field_validator("dob")
     @classmethod
@@ -111,6 +113,10 @@ class UserUpdate(BaseModel):
     last_donation_date: Optional[date] = None
     medical_conditions: Optional[str] = None
     availability: Optional[bool] = None
+    smoking_status: Optional[str] = None
+    alcohol_consumption: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
     @field_validator("phone")
     @classmethod
@@ -144,6 +150,16 @@ class UserResponse(BaseModel):
     medical_conditions: Optional[str] = None
     profile_image: Optional[str] = None
     availability: bool = True
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    estimated_distance: Optional[float] = None
+    
+    # Additional Donor specific fields
+    next_eligible_date: Optional[date] = None
+    total_donations: int = 0
+    is_verified: bool = False
+    smoking_status: Optional[str] = None
+    alcohol_consumption: Optional[str] = None
     
     created_at: datetime
     updated_at: datetime
@@ -160,10 +176,19 @@ class UserPublicResponse(BaseModel):
     area: Optional[str] = None
     availability: bool = True
     last_donation_date: Optional[date] = None
+    next_eligible_date: Optional[date] = None
+    total_donations: int = 0
+    is_verified: bool = False
     profile_image: Optional[str] = None
     gender: Optional[str] = None
+    smoking_status: Optional[str] = None
+    alcohol_consumption: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    estimated_distance: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class UserStatusUpdate(BaseModel):
     status: str  # ACTIVE, BANNED, INACTIVE

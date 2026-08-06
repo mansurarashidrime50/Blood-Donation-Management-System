@@ -1,13 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Users, Heart, Award, Activity, Loader2, AlertCircle } from 'lucide-react';
+import { 
+  Users, Heart, Award, Activity, Loader2, AlertCircle, Sparkles, 
+  MapPin, CheckCircle, Clock, Zap
+} from 'lucide-react';
 import adminService from '../services/adminService';
 import Loader from '../../shared/components/Loader';
 import ErrorComponent from '../../shared/components/ErrorComponent';
+import Toast from '../../shared/components/Toast';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [triggeringEscalation, setTriggeringEscalation] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -27,31 +33,69 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) return <Loader text="Assembling administrative metrics..." />;
+  const handleRunEscalation = async () => {
+    setTriggeringEscalation(true);
+    try {
+      const response = await adminService.runEscalation();
+      setToast({ type: 'success', message: response.data.message || "Radius escalation process ran successfully!" });
+      fetchStats();
+    } catch (err) {
+      console.error(err);
+      setToast({ type: 'error', message: "Failed to trigger radius escalation checker." });
+    } finally {
+      setTriggeringEscalation(false);
+    }
+  };
+
+  if (loading && !stats) return <Loader text="Assembling administrative metrics..." />;
   if (error) return <ErrorComponent message={error} onRetry={fetchStats} />;
   if (!stats) return null;
 
   const cardItems = [
     { title: 'Total Accounts', value: stats.total_users, desc: 'Registered user profiles', icon: Users, color: 'bg-indigo-50 text-indigo-650' },
-    { title: 'Registered Donors', value: stats.total_donors, desc: 'Active blood donors', icon: Heart, color: 'bg-red-50 text-red-650' },
-    { title: 'Registered Patients', value: stats.total_patients, desc: 'Patient profiles list', icon: Activity, color: 'bg-amber-50 text-amber-650' },
-    { title: 'Total Blood Requests', value: stats.total_requests, desc: 'Requests posted overall', icon: Award, color: 'bg-emerald-50 text-emerald-650' }
+    { title: 'Registered Donors', value: stats.total_donors, desc: `Verified: ${stats.verified_donors}`, icon: Heart, color: 'bg-red-50 text-red-650' },
+    { title: 'Available Donors', value: stats.available_donors, desc: 'Active & eligible to donate', icon: CheckCircle, color: 'bg-emerald-50 text-emerald-650' },
+    { title: 'Blood Requests', value: stats.total_requests, desc: `Accepted: ${stats.accepted_requests}`, icon: Award, color: 'bg-amber-50 text-amber-650' }
   ];
 
   const requestBreakdown = [
     { label: 'Pending Approval', count: stats.pending_requests, color: 'bg-amber-500' },
-    { label: 'Approved Requests', count: stats.approved_requests, color: 'bg-sky-500' },
-    { label: 'Completed Donations', count: stats.completed_donations, color: 'bg-emerald-500' }
+    { label: 'Approved & Matching', count: stats.approved_requests, color: 'bg-sky-500' },
+    { label: 'Accepted by Donor', count: stats.accepted_requests, color: 'bg-indigo-500' },
+    { label: 'Completed Donations', count: stats.completed_donations, color: 'bg-emerald-500' },
+    { label: 'Rejected / Cancelled', count: stats.rejected_requests, color: 'bg-slate-400' }
   ];
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
   return (
-    <div className="space-y-8 animate-slide-up">
+    <div className="space-y-8 animate-slide-up text-left max-w-6xl mx-auto pb-12">
+      {toast && (
+        <div className="fixed top-4 right-4 z-50 min-w-[320px]">
+          <Toast
+            type={toast.type}
+            message={toast.message}
+            onClose={() => setToast(null)}
+          />
+        </div>
+      )}
+
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Admin Overview</h1>
-        <p className="text-sm text-slate-500 font-semibold mt-0.5">Real-time indicators, supply/demand mapping, and accounts tracking</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white border border-slate-100 p-6 rounded-2xl shadow-sm">
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Admin Dashboard Overview</h1>
+          <p className="text-sm text-slate-500 font-semibold mt-0.5">Real-time indicators, supply/demand mapping, and automated escalation controls</p>
+        </div>
+        
+        {/* Step 13 manual trigger */}
+        <button
+          onClick={handleRunEscalation}
+          disabled={triggeringEscalation}
+          className="btn-primary py-2.5 px-5 text-xs bg-slate-900 hover:bg-slate-850 flex items-center gap-2 cursor-pointer shadow-sm"
+        >
+          <Zap className="w-4 h-4 text-amber-400 fill-amber-400 animate-pulse" />
+          {triggeringEscalation ? "Running Escalation Checker..." : "Trigger Radius Escalation"}
+        </button>
       </div>
 
       {/* Grid Cards */}
@@ -62,9 +106,9 @@ export default function AdminDashboard() {
             <div key={idx} className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.title}</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{item.title}</span>
                   <div className="text-2xl font-extrabold text-slate-800">{item.value}</div>
-                  <span className="text-[10px] text-slate-400 font-semibold">{item.desc}</span>
+                  <span className="text-[10px] text-slate-450 font-bold">{item.desc}</span>
                 </div>
                 <div className={`p-3 rounded-xl ${item.color}`}>
                   <Icon className="w-6 h-6" />
@@ -90,7 +134,7 @@ export default function AdminDashboard() {
                     <span className="text-slate-500">{item.label}</span>
                     <span className="text-slate-800">{item.count} ({percentage}%)</span>
                   </div>
-                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                     <div 
                       className={`h-full ${item.color} rounded-full transition-all duration-500`} 
                       style={{ width: `${percentage}%` }}
@@ -105,7 +149,7 @@ export default function AdminDashboard() {
         {/* Blood Supply vs Demand Panel */}
         <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm lg:col-span-2 space-y-6">
           <h3 className="text-base font-bold text-slate-800">Blood Types Supply vs Demand</h3>
-          <p className="text-xs text-slate-400 font-semibold mt-[-8px]">Compares active donors supply (red) vs active patient requests demand (gray)</p>
+          <p className="text-xs text-slate-400 font-semibold mt-[-8px]">Compares verified active donors supply (red) vs patient requests demand (gray)</p>
           
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {bloodGroups.map((bg) => {
@@ -117,7 +161,7 @@ export default function AdminDashboard() {
               const demandHeight = `${(demandCount / maxVal) * 100}%`;
 
               return (
-                <div key={bg} className="border border-slate-100 rounded-xl p-3 bg-slate-50 flex flex-col justify-between items-center h-44">
+                <div key={bg} className="border border-slate-100 rounded-xl p-3 bg-slate-50/50 flex flex-col justify-between items-center h-44">
                   <span className="text-sm font-black text-slate-700">{bg}</span>
                   
                   {/* Miniature graph columns */}
@@ -134,9 +178,9 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   
-                  <div className="flex justify-between w-full text-[10px] font-bold text-slate-400 px-1 border-t border-slate-200 pt-1.5 mt-1">
-                    <span>S: {supplyCount}</span>
-                    <span>D: {demandCount}</span>
+                  <div className="flex justify-between w-full text-[9px] font-bold text-slate-450 px-1 border-t border-slate-200 pt-1.5 mt-1">
+                    <span>Supply: {supplyCount}</span>
+                    <span>Demand: {demandCount}</span>
                   </div>
                 </div>
               );
@@ -144,6 +188,24 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Bottom Panel: Activity logs */}
+      <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-sm space-y-4">
+        <h3 className="text-base font-bold text-slate-800">Recent Request Activity Logs</h3>
+        <div className="divide-y divide-slate-50">
+          {stats.recent_activities && stats.recent_activities.length > 0 ? (
+            stats.recent_activities.map((act, idx) => (
+              <div key={idx} className="py-3 flex justify-between items-center text-xs font-semibold">
+                <span className="text-slate-700">{act.message}</span>
+                <span className="text-slate-400 font-bold">{new Date(act.time).toLocaleTimeString()}</span>
+              </div>
+            ))
+          ) : (
+            <span className="text-xs text-slate-400 italic font-semibold">No recent logs recorded.</span>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

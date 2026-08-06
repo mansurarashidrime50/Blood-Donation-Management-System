@@ -226,11 +226,21 @@ async def propose_meeting(
                 status="Pending"
             )
         )
+        # If the request status was already Confirmed, revert to Accepted since meeting details changed
+        if blood_request.request_status == "Confirmed":
+            from app.schemas.blood_request import BloodRequestUpdate
+            await blood_request_repository.update(
+                db,
+                db_obj=blood_request,
+                obj_in=BloodRequestUpdate(request_status="Accepted"),
+                changed_by_id=current_user.id,
+                notes="Meeting details updated by patient. Reverting request status to Accepted."
+            )
         await send_in_app_notification(
             db,
             user_id=blood_request.accepted_donor_id,
             title="Meeting Proposal Updated",
-            content=f"Patient proposed new meeting details: {meeting_base.meeting_location} at {meeting_base.meeting_time}.",
+            content=f"Patient proposed new meeting details: {meeting_base.meeting_location} at {meeting_base.meeting_time.strftime('%Y-%m-%d %H:%M')}.",
             type="MEETING_PROPOSED",
             link="/donor/dashboard"
         )

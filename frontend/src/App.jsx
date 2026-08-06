@@ -22,6 +22,7 @@ import DonorRegister from './donor/pages/Register';
 
 // Patient Module Pages
 import PatientDashboard from './patient/pages/PatientDashboard';
+import BloodRequestList from './patient/pages/BloodRequestList';
 import BloodRequestForm from './patient/pages/BloodRequestForm';
 import TrackRequest from './patient/pages/TrackRequest';
 import SearchDonors from './patient/pages/SearchDonors';
@@ -166,7 +167,7 @@ export default function App() {
           } />
           <Route path="/patient/requests" element={
             <RoleRoute allowedRoles={['PATIENT']}>
-              <PatientDashboard />
+              <BloodRequestList />
             </RoleRoute>
           } />
           <Route path="/patient/requests/create" element={

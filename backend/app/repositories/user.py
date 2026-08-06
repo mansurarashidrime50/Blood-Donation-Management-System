@@ -1,4 +1,5 @@
 from sqlalchemy import select, func, and_, or_
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Tuple
 from app.models.user import User
@@ -7,15 +8,39 @@ from app.core.security import get_password_hash
 
 class UserRepository:
     async def get(self, db: AsyncSession, id: int) -> Optional[User]:
-        result = await db.execute(select(User).filter(User.id == id))
+        result = await db.execute(
+            select(User)
+            .filter(User.id == id)
+            .options(
+                selectinload(User.admin_profile),
+                selectinload(User.donor_profile),
+                selectinload(User.patient_profile)
+            )
+        )
         return result.scalars().first()
 
     async def get_by_uuid(self, db: AsyncSession, uuid: str) -> Optional[User]:
-        result = await db.execute(select(User).filter(User.uuid == uuid))
+        result = await db.execute(
+            select(User)
+            .filter(User.uuid == uuid)
+            .options(
+                selectinload(User.admin_profile),
+                selectinload(User.donor_profile),
+                selectinload(User.patient_profile)
+            )
+        )
         return result.scalars().first()
 
     async def get_by_email(self, db: AsyncSession, email: str) -> Optional[User]:
-        result = await db.execute(select(User).filter(User.email.ilike(email.strip())))
+        result = await db.execute(
+            select(User)
+            .filter(User.email.ilike(email.strip()))
+            .options(
+                selectinload(User.admin_profile),
+                selectinload(User.donor_profile),
+                selectinload(User.patient_profile)
+            )
+        )
         return result.scalars().first()
 
     async def create_donor(self, db: AsyncSession, *, obj_in: DonorRegister) -> User:
@@ -39,6 +64,23 @@ class UserRepository:
             availability=obj_in.availability,
         )
         db.add(db_obj)
+        await db.flush() # flush to generate ID
+
+        from app.models.profile import DonorProfile
+        from datetime import timedelta
+        next_el = None
+        if obj_in.last_donation_date:
+            next_el = obj_in.last_donation_date + timedelta(days=90)
+            
+        donor_prof = DonorProfile(
+            user_id=db_obj.id,
+            last_donation_date=obj_in.last_donation_date,
+            next_eligible_date=next_el,
+            total_donations=0,
+            is_verified=True,  # Defaulting verified to True for quick registration, can be banned/modified by Admin
+            availability=obj_in.availability if obj_in.availability is not None else True
+        )
+        db.add(donor_prof)
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
@@ -60,6 +102,11 @@ class UserRepository:
             dob=obj_in.dob
         )
         db.add(db_obj)
+        await db.flush()
+
+        from app.models.profile import PatientProfile
+        patient_prof = PatientProfile(user_id=db_obj.id)
+        db.add(patient_prof)
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
@@ -74,6 +121,11 @@ class UserRepository:
             status="ACTIVE"
         )
         db.add(db_obj)
+        await db.flush()
+
+        from app.models.profile import AdminProfile
+        admin_prof = AdminProfile(user_id=db_obj.id)
+        db.add(admin_prof)
         await db.commit()
         await db.refresh(db_obj)
         return db_obj
@@ -82,6 +134,20 @@ class UserRepository:
         update_data = obj_in.model_dump(exclude_unset=True)
         for field in update_data:
             setattr(db_obj, field, update_data[field])
+            
+        # Synchronize updates to DonorProfile if it exists
+        if db_obj.role == "DONOR" and db_obj.donor_profile:
+            from datetime import timedelta
+            if "availability" in update_data:
+                db_obj.donor_profile.availability = update_data["availability"]
+            if "last_donation_date" in update_data:
+                db_obj.donor_profile.last_donation_date = update_data["last_donation_date"]
+                if update_data["last_donation_date"]:
+                    db_obj.donor_profile.next_eligible_date = update_data["last_donation_date"] + timedelta(days=90)
+                else:
+                    db_obj.donor_profile.next_eligible_date = None
+            db.add(db_obj.donor_profile)
+
         db.add(db_obj)
         await db.commit()
         await db.refresh(db_obj)
@@ -137,7 +203,11 @@ class UserRepository:
         total_count = count_result.scalar() or 0
 
         # Data query
-        query = select(User).filter(and_(*filters))
+        query = select(User).filter(and_(*filters)).options(
+            selectinload(User.admin_profile),
+            selectinload(User.donor_profile),
+            selectinload(User.patient_profile)
+        )
         query = query.offset(skip).limit(limit).order_by(User.id.desc())
         result = await db.execute(query)
         donors = result.scalars().all()
@@ -172,7 +242,11 @@ class UserRepository:
         count_result = await db.execute(count_query)
         total_count = count_result.scalar() or 0
 
-        query = select(User)
+        query = select(User).options(
+            selectinload(User.admin_profile),
+            selectinload(User.donor_profile),
+            selectinload(User.patient_profile)
+        )
         if filters:
             query = query.filter(and_(*filters))
         query = query.offset(skip).limit(limit).order_by(User.id.desc())

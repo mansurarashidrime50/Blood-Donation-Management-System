@@ -14,6 +14,8 @@ const adminService = {
   getDonations: (params) => client.get('/admin/donations', { params }),
   
   updateDonationStatus: (id, data) => client.put(`/admin/donations/${id}/status`, data),
+
+  runEscalation: () => client.post('/admin/run-escalation'),
 };
 
 export default adminService;

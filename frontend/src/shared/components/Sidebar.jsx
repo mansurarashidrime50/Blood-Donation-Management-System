@@ -96,6 +96,15 @@ export default function Sidebar() {
         <span>Overview</span>
       </NavLink>
       <NavLink
+        to="/patient/requests"
+        className={({ isActive }) =>
+          `sidebar-link ${isActive ? 'bg-red-50 text-red-600 font-bold border-r-4 border-red-500' : 'text-slate-600 hover:bg-slate-50'}`
+        }
+      >
+        <Heart className="w-5 h-5" />
+        <span>My Requests</span>
+      </NavLink>
+      <NavLink
         to="/patient/requests/create"
         className={({ isActive }) =>
           `sidebar-link ${isActive ? 'bg-red-50 text-red-600 font-bold border-r-4 border-red-500' : 'text-slate-600 hover:bg-slate-50'}`

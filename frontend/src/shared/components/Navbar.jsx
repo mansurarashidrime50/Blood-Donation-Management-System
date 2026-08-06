@@ -1,16 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Droplet, Menu, X, LogOut, User as UserIcon, Settings, BarChart2 } from 'lucide-react';
+import { Droplet, Menu, X, LogOut, Bell, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import sharedService from '../services/sharedService';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const dropdownRef = useRef(null);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 10000); // Poll notifications every 10s
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  // Click outside to close dropdown
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await sharedService.getNotifications({ limit: 5 });
+      setNotifications(response.data.items || []);
+      setUnreadCount(response.data.unread_count || 0);
+    } catch (err) {
+      console.error("Failed to load notifications", err);
+    }
+  };
+
+  const handleMarkAsRead = async (id, e) => {
+    e.stopPropagation();
+    try {
+      await sharedService.markNotificationRead(id);
+      fetchNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await sharedService.markAllNotificationsRead();
+      fetchNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleNotificationClick = async (notif) => {
+    setShowNotifications(false);
+    if (!notif.is_read) {
+      try {
+        await sharedService.markNotificationRead(notif.id);
+        fetchNotifications();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    if (notif.link) {
+      navigate(notif.link);
+    }
   };
 
   const getDashboardLink = () => {
@@ -29,7 +97,7 @@ export default function Navbar() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2 group">
               <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Droplet className="w-6 h-6 text-red-600 fill-red-600 animate-pulse" />
+                <Droplet className="w-6 h-6 text-red-655 fill-red-600 animate-pulse" />
               </div>
               <span className="text-xl font-extrabold text-slate-800 tracking-tight">
                 শেষ আশা <span className="text-red-600">Blood Link</span>
@@ -43,14 +111,14 @@ export default function Navbar() {
               <>
                 <Link
                   to={getDashboardLink()}
-                  className="text-sm font-semibold text-slate-650 hover:text-red-600 transition-colors"
+                  className="text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors"
                 >
                   Dashboard
                 </Link>
                 {user.role === 'DONOR' && (
                   <Link
                     to="/donor/history"
-                    className="text-sm font-semibold text-slate-655 hover:text-red-600 transition-colors"
+                    className="text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors"
                   >
                     Donation History
                   </Link>
@@ -58,7 +126,7 @@ export default function Navbar() {
                 {user.role === 'PATIENT' && (
                   <Link
                     to="/patient/search-donors"
-                    className="text-sm font-semibold text-slate-655 hover:text-red-600 transition-colors"
+                    className="text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors"
                   >
                     Search Donors
                   </Link>
@@ -66,12 +134,79 @@ export default function Navbar() {
                 {user.role === 'ADMIN' && (
                   <Link
                     to="/admin/users"
-                    className="text-sm font-semibold text-slate-655 hover:text-red-600 transition-colors"
+                    className="text-sm font-semibold text-slate-600 hover:text-red-600 transition-colors"
                   >
                     Users Manager
                   </Link>
                 )}
                 
+                {/* Notifications Bell Dropdown */}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-all relative cursor-pointer"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1.5 right-1.5 w-4.5 h-4.5 rounded-full bg-red-500 text-white font-bold text-[9px] flex items-center justify-center animate-bounce">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {showNotifications && (
+                    <div className="absolute right-0 mt-2 w-80 bg-white border border-slate-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-fade-in">
+                      <div className="p-3.5 border-b border-slate-50 flex items-center justify-between">
+                        <span className="font-bold text-xs text-slate-800 uppercase tracking-wider">In-App Notifications</span>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={handleMarkAllRead}
+                            className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5"
+                          >
+                            <Check className="w-3.5 h-3.5" /> Mark all read
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="max-h-64 overflow-y-auto divide-y divide-slate-50">
+                        {notifications.length === 0 ? (
+                          <div className="p-6 text-center text-slate-400 flex flex-col items-center gap-1.5">
+                            <AlertCircle className="w-8 h-8 text-slate-300" />
+                            <span className="text-xs font-semibold">No new notifications</span>
+                          </div>
+                        ) : (
+                          notifications.map((notif) => (
+                            <div
+                              key={notif.id}
+                              onClick={() => handleNotificationClick(notif)}
+                              className={`p-3.5 hover:bg-slate-50 transition-colors cursor-pointer text-left flex flex-col gap-1 ${
+                                !notif.is_read ? 'bg-red-50/20' : ''
+                              }`}
+                            >
+                              <div className="flex justify-between items-start gap-2">
+                                <span className="font-bold text-xs text-slate-800 leading-tight">{notif.title}</span>
+                                {!notif.is_read && (
+                                  <button
+                                    onClick={(e) => handleMarkAsRead(notif.id, e)}
+                                    className="p-1 rounded bg-slate-100 hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors"
+                                    title="Mark as Read"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <p className="text-[11px] font-semibold text-slate-500 leading-normal">{notif.content}</p>
+                              <span className="text-[9px] font-bold text-slate-400 mt-1">
+                                {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Profile Widget */}
                 <div className="flex items-center gap-3 border-l border-slate-200 pl-6">
                   <Link
@@ -95,7 +230,7 @@ export default function Navbar() {
 
                   <button
                     onClick={handleLogout}
-                    className="p-2 rounded-xl text-slate-450 hover:text-red-600 hover:bg-red-50 transition-all"
+                    className="p-2 rounded-xl text-slate-450 hover:text-red-600 hover:bg-red-50 transition-all cursor-pointer"
                     title="Sign Out"
                   >
                     <LogOut className="w-5 h-5" />

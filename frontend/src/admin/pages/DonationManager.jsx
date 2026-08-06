@@ -98,31 +98,31 @@ export default function DonationManager() {
               {d.donation_date}
             </td>
             <td className="px-6 py-4">
-              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${getStatusStyle(d.status)}`}>
-                {d.status}
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider text-center ${getStatusStyle(d.status)}`}>
+                  {d.status}
+                </span>
+                <div className="flex gap-1.5 mt-1">
+                  <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${d.donor_completed ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}`}>
+                    Donor: {d.donor_completed ? 'Done' : 'Pending'}
+                  </span>
+                  <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${d.patient_completed ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-400'}`}>
+                    Patient: {d.patient_completed ? 'Received' : 'Pending'}
+                  </span>
+                </div>
+              </div>
             </td>
             <td className="px-6 py-4">
               <div className="flex items-center gap-2">
-                {d.status === 'Pending' && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => handleStatusUpdate(d, 'Approved')}
-                    icon={CheckCircle}
-                    className="text-sky-600 hover:bg-sky-50"
-                  >
-                    Approve
-                  </Button>
-                )}
-                {d.status === 'Approved' && (
+                {d.status !== 'Completed' && (
                   <Button
                     variant="primary"
                     size="sm"
                     onClick={() => handleStatusUpdate(d, 'Completed')}
-                    icon={Award}
+                    icon={CheckCircle}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
                   >
-                    Complete
+                    Verify Donation
                   </Button>
                 )}
                 {d.status !== 'Completed' && d.status !== 'Cancelled' && (

@@ -72,6 +72,7 @@ export default function TrackRequest() {
     setSubmittingMeeting(true);
     try {
       const response = await patientService.proposeMeeting(id, {
+        request_id: parseInt(id),
         meeting_time: new Date(meetingTime).toISOString(),
         meeting_location: meetingLocation
       });
